@@ -191,12 +191,12 @@
     }
   }
 
-  function deleteResources (res) {
-    res.forEach(r => r.delete)
+  function deleteResources (res: any) {
+    res.forEach((r: any) => r.delete)
   }
 
   async function extractVegetation () {
-    const points = polygon.points
+    const points = polygon?.points || []
 
     if (scaledImage.value && openCvCanvas.value) {
       const src = cv.imread(scaledImage.value)
