@@ -62,6 +62,7 @@
   const vegetationImageSrc = ref<string>()
   const ratio = ref<number>()
   const sliderValue = ref<number>(50)
+  const polygon = ref<Polygon>()
 
   const p1 = 0.95
   const p2 = 0.95
@@ -69,7 +70,6 @@
   let maxRes = 1080
   let maxWidth = 1080
   let canvas: Canvas | undefined = undefined
-  let polygon: Polygon | undefined = undefined
   let imageDimensions: Dims = { x: 0, y: 0 }
   let canvasDimensions: Dims = { x: 0, y: 0 }
 
@@ -97,10 +97,10 @@
   })
 
   function maximizePolygon () {
-    if (polygon) {
-      polygon.points = [{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }]
-      polygon.setCoords()
-      polygon.canvas?.renderAll()
+    if (polygon.value) {
+      polygon.value.points = [{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }]
+      polygon.value.setCoords()
+      polygon.value.canvas?.renderAll()
     }
   }
 
@@ -110,6 +110,7 @@
         canvas = new Canvas(polygonCanvas.value)
         const width = Math.min(maxWidth, imageDimensions.x)
         const height = width * (imageDimensions.y / imageDimensions.x)
+
         canvasDimensions = { x: width, y: height }
         canvas.setDimensions({ width, height })
         canvas.on('object:moving', (e: any) => {
@@ -132,8 +133,8 @@
         })
       }
 
-      if (!polygon) {
-        polygon = new Polygon([{ x: 20, y: 20 }, { x: canvasDimensions.x - 40, y: 20 }, { x: canvasDimensions.x - 40, y: canvasDimensions.y - 40 }, { x: 20, y: canvasDimensions.y - 40 }], {
+      if (!polygon.value) {
+        polygon.value = new Polygon([{ x: 20, y: 20 }, { x: canvasDimensions.x - 40, y: 20 }, { x: canvasDimensions.x - 40, y: canvasDimensions.y - 40 }, { x: 20, y: canvasDimensions.y - 40 }], {
           fill: 'white',
           opacity: 0.25,
           strokeWidth: 1,
@@ -143,11 +144,11 @@
           cornerColor: '#6E1E41',
           hasBorders: false,
         })
-        canvas.add(polygon)
-        polygon.controls = controlsUtils.createPolyControls(polygon)
-        Object.keys(polygon.controls).forEach(k => {
-          if (polygon) {
-            const control = polygon.controls[k]
+        canvas.add(polygon.value)
+        polygon.value.controls = controlsUtils.createPolyControls(polygon.value)
+        Object.keys(polygon.value.controls).forEach(k => {
+          if (polygon.value) {
+            const control = polygon.value.controls[k]
             const ph = control.actionHandler
             control.actionHandler = (a: TPointerEvent, b: Transform, x: number, y: number) => {
               const canvas = b.target.canvas
@@ -159,7 +160,7 @@
             }
           }
         })
-        canvas.setActiveObject(polygon)
+        canvas.setActiveObject(polygon.value)
       }
     }
   }
@@ -196,7 +197,7 @@
   }
 
   async function extractVegetation () {
-    const points = polygon?.points || []
+    const points = polygon.value?.points || []
 
     if (scaledImage.value && openCvCanvas.value) {
       const src = cv.imread(scaledImage.value)
@@ -220,22 +221,22 @@
     if (scaledImageSrc.value && scaledImage.value && openCvCanvas.value) {
       const src = cv.imread(scaledImage.value)
       const dst = new cv.Mat()
-      let dsize
 
       if (src.cols > maxRes || src.rows > maxRes) {
         imageDimensions = getDims(src.cols, src.rows, maxRes)
-        dsize = new cv.Size(imageDimensions.x, imageDimensions.y)
+        const dsize = new cv.Size(imageDimensions.x, imageDimensions.y)
 
         // You can try more different parameters
         cv.resize(src, dst, dsize, 0, 0, cv.INTER_AREA)
         cv.imshow(openCvCanvas.value, dst)
         scaledImageSrc.value = openCvCanvas.value.toDataURL()
       } else {
+        imageDimensions = { x: src.cols, y: src.rows }
         cv.imshow(openCvCanvas.value, src)
         scaledImageSrc.value = openCvCanvas.value.toDataURL()
       }
 
-      addPolygon()
+      nextTick(() => addPolygon())
 
       deleteResources([src, dst])
     }
