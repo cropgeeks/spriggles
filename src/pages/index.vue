@@ -17,7 +17,6 @@
     <div class="outer-canvas-container">
       <img ref="scaledImage" class="spriggles-img" :src="scaledImageSrc">
       <canvas ref="polygonCanvas" height="0" width="0" />
-      <canvas ref="openCvCanvas" class="d-none" />
     </div>
 
     <v-btn
@@ -30,8 +29,6 @@
     </v-btn>
 
     <h2 v-if="ratio !== undefined">Vegetation ratio: {{ (ratio * 100).toFixed(2) }}%</h2>
-
-    <img ref="unskewedImage" class="d-none" :src="unskewedImageSrc">
 
     <ImgComparisonSlider :value="sliderValue">
       <figure slot="first" class="before">
@@ -49,13 +46,13 @@
 <script lang="ts" setup>
   import { ImgComparisonSlider } from '@img-comparison-slider/vue'
   import { Canvas, controlsUtils, Polygon, type TPointerEvent, type Transform } from 'fabric'
-  import cv from '@techstark/opencv-js'
+  import Image from 'image-js'
+  import { distort, Canvas as LensCanvas, VirtualPixelMethod } from '@alxcube/lens'
+  import { type Dims, limitDimensions, minkowskiDistance } from '@/plugins/util'
 
   const wrapper = useTemplateRef('wrapper')
   const polygonCanvas = useTemplateRef('polygonCanvas')
-  const openCvCanvas = useTemplateRef('openCvCanvas')
   const scaledImage = useTemplateRef('scaledImage')
-  const unskewedImage = useTemplateRef('unskewedImage')
   const sourceImageFile = ref<File>()
   const scaledImageSrc = ref<string>()
   const unskewedImageSrc = ref<string>()
@@ -72,10 +69,26 @@
   let canvas: Canvas | undefined = undefined
   let imageDimensions: Dims = { x: 0, y: 0 }
   let canvasDimensions: Dims = { x: 0, y: 0 }
+  const resizeObserver: ResizeObserver = new ResizeObserver(debounceResize)
+  let lastKnownWidth: number = 0
+  let timeout: ReturnType<typeof setTimeout>
 
-  interface Dims {
-    x: number
-    y: number
+  function debounceResize () {
+    if (sourceImageFile.value && wrapper.value?.clientWidth && lastKnownWidth !== wrapper.value?.clientWidth) {
+      lastKnownWidth = wrapper.value?.clientWidth
+
+      canvas?.dispose()
+      canvas = undefined
+      polygon.value = undefined
+      maxWidth = wrapper.value?.clientWidth || 1080
+      if (polygonCanvas.value) {
+        polygonCanvas.value.width = 0
+        polygonCanvas.value.height = 0
+      }
+
+      clearTimeout(timeout)
+      timeout = setTimeout(() => addPolygon(), 100)
+    }
   }
 
   watch(sourceImageFile, async (newValue: File | undefined) => {
@@ -105,14 +118,37 @@
   }
 
   function addPolygon () {
-    if (polygonCanvas.value) {
+    if (polygonCanvas.value && scaledImage.value) {
       if (!canvas) {
+        canvasDimensions = limitDimensions(scaledImage.value.clientWidth, scaledImage.value.clientHeight, maxRes)
         canvas = new Canvas(polygonCanvas.value)
-        const width = Math.min(maxWidth, imageDimensions.x)
-        const height = width * (imageDimensions.y / imageDimensions.x)
+        const width = Math.min(maxWidth, canvasDimensions.x)
+        const height = width * (canvasDimensions.y / canvasDimensions.x)
 
         canvasDimensions = { x: width, y: height }
         canvas.setDimensions({ width, height })
+        canvas.on('mouse:down', (e: any) => {
+          if (polygon.value && polygon.value.points) {
+            let index = -1
+            let minDistance = Number.MAX_VALUE
+
+            polygon.value.points.forEach((p, i) => {
+              const distance = minkowskiDistance([p.x, p.y], [e.absolutePointer.x, e.absolutePointer.y])
+
+              if (distance < minDistance) {
+                minDistance = distance
+                index = i
+              }
+            })
+
+            if (index !== -1) {
+              polygon.value.points[index].x = e.absolutePointer.x
+              polygon.value.points[index].y = e.absolutePointer.y
+              polygon.value.setCoords()
+              polygon.value.canvas?.renderAll()
+            }
+          }
+        })
         canvas.on('object:moving', (e: any) => {
           const obj = e.target
           // if object is too big ignore
@@ -131,16 +167,19 @@
             obj.left = Math.min(obj.left, obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left)
           }
         })
+      } else {
+        // TODO: Check if dimensions same, if not resize canvas, move polygon
       }
 
       if (!polygon.value) {
-        polygon.value = new Polygon([{ x: 20, y: 20 }, { x: canvasDimensions.x - 40, y: 20 }, { x: canvasDimensions.x - 40, y: canvasDimensions.y - 40 }, { x: 20, y: canvasDimensions.y - 40 }], {
+        polygon.value = new Polygon([{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }], {
           fill: 'white',
           opacity: 0.25,
           strokeWidth: 1,
           stroke: 'white',
           objectCaching: false,
           transparentCorners: false,
+          cornerSize: 20,
           cornerColor: '#6E1E41',
           hasBorders: false,
         })
@@ -152,11 +191,7 @@
             const ph = control.actionHandler
             control.actionHandler = (a: TPointerEvent, b: Transform, x: number, y: number) => {
               const canvas = b.target.canvas
-              if (x < 0 || y < 0 || x > (canvas?.width || 0) || y > (canvas?.height || 0)) {
-                return false
-              } else {
-                return ph(a, b, x, y)
-              }
+              return ph(a, b, Math.min(Math.max(x, 0), canvas?.width || 0), Math.min(Math.max(y, 0), canvas?.height || 0))
             }
           }
         })
@@ -165,142 +200,89 @@
     }
   }
 
-  function getDims (width: number, height: number, maxRes: number): Dims {
-    if (width > maxRes || height > maxRes) {
-      const vRatio = maxRes / height
-      const hRatio = maxRes / width
-      let targetWidth
-      let targetHeight
-
-      if (vRatio > hRatio) {
-        targetWidth = maxRes
-        targetHeight = height * hRatio
-      } else {
-        targetWidth = width * vRatio
-        targetHeight = maxRes
-      }
-
-      return {
-        x: targetWidth,
-        y: targetHeight,
-      }
-    }
-
-    return {
-      x: width,
-      y: height,
-    }
-  }
-
-  function deleteResources (res: any) {
-    res.forEach((r: any) => r.delete)
-  }
-
   async function extractVegetation () {
-    const points = polygon.value?.points || []
+    const ratio = imageDimensions.x / canvasDimensions.x
+    const points = (polygon.value?.points || []).concat().map(p => {
+      return {
+        x: p.x * ratio,
+        y: p.y * ratio,
+      }
+    })
 
-    if (scaledImage.value && openCvCanvas.value) {
-      const src = cv.imread(scaledImage.value)
-      const dst = new cv.Mat()
-      const dsize = new cv.Size(src.cols, src.rows)
-      const srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [points[0].x, points[0].y, points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y])
-      const dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, src.cols, 0, src.cols, src.rows, 0, src.rows])
-      const M = cv.getPerspectiveTransform(srcTri, dstTri)
-      cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar())
-      cv.imshow(openCvCanvas.value, dst)
-
-      unskewedImageSrc.value = openCvCanvas.value.toDataURL()
-
-      deleteResources([src, dst, srcTri, dstTri, M])
-
-      nextTick(() => calculateVegetationIndex())
+    if (scaledImageSrc.value) {
+      // We're doing img-src => blob => canvas => perspective transformed canvas => blob => img-src
+      fetch(scaledImageSrc.value)
+        .then(res => res.blob())
+        .then(blob => {
+          return LensCanvas.createFromBlob(blob)
+        })
+        .then(canvas => {
+          return distort(canvas, 'Perspective', [points[0].x, points[0].y, 0, 0, points[1].x, points[1].y, canvas.width, 0, points[3].x, points[3].y, 0, canvas.height, points[2].x, points[2].y, canvas.width, canvas.height], {
+            viewport: { width: canvas.width, height: canvas.height, x: 0, y: 0 },
+            virtualPixelMethod: VirtualPixelMethod.TRANSPARENT,
+          })
+        })
+        .then(img => {
+          return (img.image.getResource() as OffscreenCanvas).convertToBlob()
+        })
+        .then(blob => {
+          return new Promise(resolve => {
+            const reader = new FileReader()
+            reader.onload = () => {
+              resolve(reader.result)
+            }
+            reader.readAsDataURL(blob)
+          })
+        })
+        .then(imgData => {
+          if (imgData) {
+            unskewedImageSrc.value = (imgData as string)
+            nextTick(() => calculateVegetationIndex())
+          }
+        })
     }
   }
 
   async function downScaleImage () {
-    if (scaledImageSrc.value && scaledImage.value && openCvCanvas.value) {
-      const src = cv.imread(scaledImage.value)
-      const dst = new cv.Mat()
+    if (scaledImageSrc.value) {
+      let image = await Image.load(scaledImageSrc.value)
 
-      if (src.cols > maxRes || src.rows > maxRes) {
-        imageDimensions = getDims(src.cols, src.rows, maxRes)
-        const dsize = new cv.Size(imageDimensions.x, imageDimensions.y)
-
-        // You can try more different parameters
-        cv.resize(src, dst, dsize, 0, 0, cv.INTER_AREA)
-        cv.imshow(openCvCanvas.value, dst)
-        scaledImageSrc.value = openCvCanvas.value.toDataURL()
-      } else {
-        imageDimensions = { x: src.cols, y: src.rows }
-        cv.imshow(openCvCanvas.value, src)
-        scaledImageSrc.value = openCvCanvas.value.toDataURL()
+      if (image.width > maxRes || image.height > maxRes) {
+        imageDimensions = limitDimensions(image.width, image.height, maxRes)
+        image = image.resize({ width: imageDimensions.x, height: imageDimensions.y, preserveAspectRatio: true })
+        scaledImageSrc.value = image.toDataURL()
       }
 
       nextTick(() => addPolygon())
-
-      deleteResources([src, dst])
     }
   }
 
   async function calculateVegetationIndex () {
-    if (unskewedImageSrc.value && unskewedImage.value && openCvCanvas.value) {
-      const unskewed = cv.imread(unskewedImage.value)
-      const original = cv.imread(unskewedImage.value)
-      const channels = unskewed.channels()
+    if (unskewedImageSrc.value) {
+      const image = await Image.load(unskewedImageSrc.value)
+      const canopeo = image.grey({
+        algorithm: (r,g,b) => {
+          return ((r / g < p1) && (b / g < p2) && (2 * g - r - b) > p3) ? 255 : 0
+        },
+      })
+      const mask = canopeo.open().close().mask()
+      ratio.value = canopeo.data.filter(c => c !== 0).length / canopeo.data.length
 
-      // First, calculate the mask
-      for (let row = 0; row < unskewed.rows; row++) {
-        for (let col = 0; col < unskewed.cols; col++) {
-          const x = row * unskewed.cols * channels + col * channels
-          const r = unskewed.data[x]
-          const g = unskewed.data[x + 1]
-          const b = unskewed.data[x + 2]
-
-          const v = ((r / g < p1) && (b / g < p2) && (2 * g - r - b) > p3) ? 255 : 0
-
-          unskewed.data[x] = v
-          unskewed.data[x + 1] = v
-          unskewed.data[x + 2] = v
-        }
-      }
-
-      // Then remove smaller clusters using opening
-      const mask = new cv.Mat()
-      const M = cv.Mat.ones(3, 3, cv.CV_8U)
-      const anchor = new cv.Point(-1, -1)
-      cv.morphologyEx(unskewed, mask, cv.MORPH_OPEN, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue())
-
-      // Then calculate the ratio as well as setting the original non-green parts to black
-      let count = 0
-      let total = 0
-      for (let row = 0; row < mask.rows; row++) {
-        for (let col = 0; col < mask.cols; col++) {
-          total++
-          const x = row * mask.cols * channels + col * channels
-          const r = mask.data[x]
-          const g = mask.data[x + 1]
-          const b = mask.data[x + 2]
-
-          if (r > 0 || g > 0 || b > 0) {
-            count++
-          }
-        }
-      }
-
-      ratio.value = count / total
-
-      const extract = new cv.Mat()
-      cv.bitwise_and(original, mask, extract)
-      cv.imshow(openCvCanvas.value, extract)
-      vegetationImageSrc.value = openCvCanvas.value.toDataURL()
-
-      deleteResources([unskewed, original, mask, M, extract])
+      vegetationImageSrc.value = image.extract(mask).toDataURL()
     }
   }
 
   onMounted(() => {
+    if (wrapper.value) {
+      resizeObserver.observe(wrapper.value)
+    }
     maxWidth = wrapper.value?.clientWidth || 1080
     maxRes = 1080
+  })
+  onBeforeUnmount(() => {
+    if (wrapper.value) {
+      resizeObserver.unobserve(wrapper.value)
+    }
   })
 </script>
 
