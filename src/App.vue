@@ -15,7 +15,7 @@
           src="@/assets/spriggles-full.svg"
         />
 
-        <v-app-bar-title style="cursor: pointer" @click="$router.push('/')">Spriggles</v-app-bar-title>
+        <v-app-bar-title style="cursor: pointer" @click="router.push('/')">Spriggles</v-app-bar-title>
         <v-spacer />
         <v-btn
           icon="mdi-plus"
@@ -107,6 +107,7 @@
   const loading = ref<boolean>(false)
   const loadingMessage = ref<string>()
   const route = useRoute()
+  const router = useRouter()
 
   function setLoading (newLoading: boolean, newMessage: string) {
     loading.value = newLoading

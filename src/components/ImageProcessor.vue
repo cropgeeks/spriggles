@@ -284,7 +284,8 @@
 
       const image = await Image.load(unskewedImageSrc.value)
       const canopeo = image.grey({
-        algorithm: (r,g,b) => {
+        algorithm: (r, g, b) => {
+          // return ((4 * g - 3 * b - r) > 175) ? 255 : 0
           return ((r / g < p1) && (b / g < p2) && (2 * g - r - b) > p3) ? 255 : 0
         },
       })
