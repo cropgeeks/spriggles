@@ -20,7 +20,7 @@
     >
       Maximize selection
     </v-btn>
-    <div class="outer-canvas-container">
+    <div class="outer-canvas-container justify-center">
       <img ref="scaledImage" class="spriggles-img" :src="scaledImageSrc">
       <canvas ref="polygonCanvas" height="0" width="0" />
     </div>
@@ -36,16 +36,18 @@
 
     <h2 v-if="ratio !== undefined">Vegetation ratio: {{ (ratio * 100).toFixed(2) }}%</h2>
 
-    <ImgComparisonSlider :value="sliderValue">
-      <figure slot="first" class="before">
-        <img class="spriggles-img" :src="unskewedImageSrc">
-        <figcaption>Original</figcaption>
-      </figure>
-      <figure slot="second" class="after">
-        <img class="spriggles-img" :src="vegetationImageSrc">
-        <figcaption>Extracted</figcaption>
-      </figure>
-    </ImgComparisonSlider>
+    <div class="d-flex justify-center">
+      <ImgComparisonSlider :value="sliderValue">
+        <figure slot="first" class="before">
+          <img class="spriggles-img" :src="unskewedImageSrc">
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure slot="second" class="after">
+          <img class="spriggles-img" :src="vegetationImageSrc">
+          <figcaption>Extracted</figcaption>
+        </figure>
+      </ImgComparisonSlider>
+    </div>
   </div>
 </template>
 

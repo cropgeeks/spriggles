@@ -12,7 +12,7 @@
       >
         {{ image.displayTitle }}
         <template #append>
-          <v-progress-linear color="primary" :model-value="(image.ratio || 0) * 100" />
+          <v-progress-linear :color="gradient[Math.ceil((image.ratio || 0) * 100) - 1]" :model-value="(image.ratio || 0) * 100" />
         </template>
       </v-tab>
     </v-tabs>
@@ -38,9 +38,14 @@
   import * as XLSX from 'xlsx'
   import ImageProcessor from '@/components/ImageProcessor.vue'
   import { truncate, TruncationPosition } from '@/plugins/util'
+  import { createColorGradient } from '@/plugins/colors'
+  import { useTheme } from 'vuetify'
+
+  const vTheme = useTheme()
 
   const pattern = /(?<trialName>.+)_(?<date>\d{4}-\d{2}-\d{2})_(?<time>\d{2}-\d{2}-\d{2})_(?<germplasm>.+)_(?<row>\d+)_(?<column>\d+)_.+/
 
+  // TYPES
   interface GridScoreConfig {
     germplasm: string
     rep?: string | undefined
@@ -48,7 +53,6 @@
     column: number
     timestamp?: string
   }
-
   interface Tab {
     title: string
     displayTitle: string
@@ -56,11 +60,24 @@
     ratio?: number | undefined
   }
 
+  // REFS
   const tab = ref<number>(0)
   const images = ref<Tab[]>([
     { title: 'Image', displayTitle: 'Image' },
   ])
 
+  // COMPUTED
+  const gradient: ComputedRef<string[]> = computed(() => {
+    const maxRatio = Math.max(...images.value.map(i => i.ratio || 0))
+
+    if (maxRatio > 0) {
+      return createColorGradient(vTheme.current.value.colors.primary, vTheme.current.value.colors.secondary, Math.ceil(maxRatio * 100))
+    } else {
+      return [vTheme.current.value.colors.primary]
+    }
+  })
+
+  // METHODS
   function updateTitle (index: number, title: string) {
     const shortTitle = truncate(title, 20, TruncationPosition.MIDDLE)
     images.value[index].displayTitle = shortTitle
@@ -98,6 +115,7 @@
     XLSX.writeFile(workbook, `${new Date().toISOString().split('T')[0]}-spriggles.xlsx`)
   }
 
+  // LIFECYCLE
   onMounted(() => {
     emitter.on('add-tab', addTab)
     emitter.on('download', download)
