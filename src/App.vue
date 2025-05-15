@@ -2,6 +2,7 @@
   <v-app>
     <v-main class="pt-7">
       <v-app-bar
+        id="appbar"
         :elevation="2"
         extended
       >
@@ -26,7 +27,6 @@
         />
 
         <template #extension>
-          <div id="tabs" />
         </template>
       </v-app-bar>
 

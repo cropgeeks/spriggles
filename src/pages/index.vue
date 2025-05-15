@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="#tabs">
+  <Teleport to="#appbar .v-toolbar__extension">
     <v-tabs
       v-model="tab"
       center-active
