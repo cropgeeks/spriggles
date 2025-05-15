@@ -3,6 +3,12 @@ export interface Dims {
   y: number
 }
 
+export enum TruncationPosition {
+  START,
+  MIDDLE,
+  END
+}
+
 const minkowskiDistance = (a: number[], b: number[], order: number = 2) => {
   const l = Math.min(a.length, b.length)
 
@@ -57,8 +63,29 @@ const limitDimensions = (width: number, height: number, maxRes: number): Dims =>
   }
 }
 
+const truncate = (str: string, length: number, truncateWhere: TruncationPosition = TruncationPosition.START) => {
+  const parts = str.split('')
+
+  if (parts.length > length) {
+    const maxLength = length - 3
+
+    switch (truncateWhere) {
+      case TruncationPosition.START:
+        return `...${parts.slice(parts.length - maxLength, parts.length).join('')}`
+      case TruncationPosition.MIDDLE:
+        const middle = Math.floor(maxLength / 2)
+        return `${parts.slice(0, middle).join('')}...${parts.slice(parts.length - middle, parts.length).join('')}`
+      case TruncationPosition.END:
+        return `${parts.slice(0, maxLength).join('')}...`
+    }
+  } else {
+    return str
+  }
+}
+
 export {
   minkowskiDistance,
   debounce,
   limitDimensions,
+  truncate,
 }

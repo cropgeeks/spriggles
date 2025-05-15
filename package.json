@@ -16,13 +16,17 @@
     "@fontsource/roboto": "5.2.5",
     "@img-comparison-slider/vue": "^8.0.0",
     "@mdi/font": "7.4.47",
+    "downscale": "^1.0.6",
     "fabric": "^6.6.4",
     "image-js": "^0.37.0",
+    "tiny-emitter": "^2.1.0",
     "vue": "^3.5.13",
-    "vuetify": "^3.8.1"
+    "vuetify": "^3.8.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
+    "@types/downscale": "^1.0.4",
     "@types/node": "^22.9.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/tsconfig": "^0.7.0",
