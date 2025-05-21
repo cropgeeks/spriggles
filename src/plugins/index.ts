@@ -23,7 +23,7 @@ export function registerPlugins (app: App) {
         domain: 'cropgeeks.github.io/spriggles',
         hashMode: true,
         apiHost: 'https://plausible.hutton.ac.uk',
-        trackLocalhost: true,
+        trackLocalhost: false,
       },
       settings: {
         enableAutoPageviews: true,

@@ -48,6 +48,10 @@
         </figure>
       </ImgComparisonSlider>
     </div>
+    <div v-if="ratio !== undefined && unskewedImageSrc && vegetationImageSrc" class="mt-3 d-flex justify-space-between">
+      <v-btn class="download-button" prepend-icon="mdi-download" text="Download original" @click.prevent.stop.capture="downloadImage(unskewedImageSrc, 'original')" />
+      <v-btn class="download-button" prepend-icon="mdi-download" text="Download extracted" @click.prevent.stop.capture="downloadImage(vegetationImageSrc, 'extracted')" />
+    </div>
   </div>
 </template>
 
@@ -77,14 +81,23 @@
   const p1 = 0.95
   const p2 = 0.95
   const p3 = 20
-  let maxRes = 1080
-  let maxWidth = 1080
+  let maxRes = 1440
+  let maxWidth = 1440
   let canvas: Canvas | undefined = undefined
   let imageDimensions: Dims = { x: 0, y: 0 }
   let canvasDimensions: Dims = { x: 0, y: 0 }
   const resizeObserver: ResizeObserver = new ResizeObserver(debounceResize)
   let lastKnownWidth: number = 0
   let timeout: ReturnType<typeof setTimeout>
+
+  function downloadImage (imageSrc: string | undefined, text: string) {
+    if (imageSrc) {
+      const a = document.createElement('a')
+      a.href = imageSrc
+      a.download = `${text}-${sourceImageFile.value?.name}`
+      a.click()
+    }
+  }
 
   function debounceResize () {
     if (sourceImageFile.value && wrapper.value?.clientWidth && lastKnownWidth !== wrapper.value?.clientWidth) {
@@ -93,7 +106,7 @@
       canvas?.dispose()
       canvas = undefined
       polygon.value = undefined
-      maxWidth = wrapper.value?.clientWidth || 1080
+      maxWidth = wrapper.value?.clientWidth || 1440
       if (polygonCanvas.value) {
         polygonCanvas.value.width = 0
         polygonCanvas.value.height = 0
@@ -237,6 +250,7 @@
           return LensCanvas.createFromBlob(blob)
         })
         .then(canvas => {
+          // TODO: Check if this is even necessary, if not just handle the normal image
           return distort(canvas, 'Perspective', [points[0].x, points[0].y, 0, 0, points[1].x, points[1].y, canvas.width, 0, points[3].x, points[3].y, 0, canvas.height, points[2].x, points[2].y, canvas.width, canvas.height], {
             viewport: { width: canvas.width, height: canvas.height, x: 0, y: 0 },
             virtualPixelMethod: VirtualPixelMethod.TRANSPARENT,
@@ -271,10 +285,12 @@
 
       if (width > maxRes || height > maxRes) {
         imageDimensions = limitDimensions(width, height, maxRes)
-        scaledImageSrc.value = await downscale(sourceImageFile.value, imageDimensions.x, imageDimensions.y)
-        emitter.emit('set-loading', false)
-        nextTick(() => addPolygon())
+      } else {
+        imageDimensions = { x: width, y: height }
       }
+      scaledImageSrc.value = await downscale(sourceImageFile.value, imageDimensions.x, imageDimensions.y)
+      emitter.emit('set-loading', false)
+      nextTick(() => addPolygon())
     }
   }
 
@@ -286,6 +302,7 @@
       const canopeo = image.grey({
         algorithm: (r, g, b) => {
           // return ((4 * g - 3 * b - r) > 175) ? 255 : 0
+          // return (2 * g - r - b)/(2 * g + r + b) > 0.1 ? 255 : 0
           return ((r / g < p1) && (b / g < p2) && (2 * g - r - b) > p3) ? 255 : 0
         },
       })
@@ -302,8 +319,8 @@
     if (wrapper.value) {
       resizeObserver.observe(wrapper.value)
     }
-    maxWidth = wrapper.value?.clientWidth || 1080
-    maxRes = 1080
+    maxWidth = wrapper.value?.clientWidth || 1440
+    maxRes = 1440
   })
   onBeforeUnmount(() => {
     if (wrapper.value) {
