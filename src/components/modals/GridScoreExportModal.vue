@@ -32,7 +32,7 @@
               <v-btn
                 block
                 class="mb-5"
-                :color="!trial ? 'primary' : null"
+                :color="!trial ? 'primary' : undefined"
                 prepend-icon="mdi-file-arrow-up-down-outline"
                 text="Load trial information"
                 @click="loadTrial"
@@ -147,7 +147,7 @@
   import { formatTimeAgo, getGridScoreColumnIndex, getGridScoreRowIndex, toLocalDateString } from '@/plugins/util'
   import type { Trait, Trial } from '@/types/gridscore'
   import axios, { type AxiosResponse } from 'axios'
-import { TraitMeasurement } from '../../types/gridscore'
+  import type { TraitMeasurement } from '../../types/gridscore'
 
   export interface Options {
     images?: Tab[]
