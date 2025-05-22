@@ -1,12 +1,5 @@
 <template>
   <div ref="wrapper">
-    <v-btn
-      class="mb-5"
-      prepend-icon="mdi-delete"
-      text="Delete tab"
-      @click="emit('delete')"
-    />
-
     <v-file-input
       v-model="sourceImageFile"
       accept="image/*"
@@ -38,6 +31,7 @@
 
     <div class="d-flex justify-center">
       <ImgComparisonSlider :value="sliderValue">
+        <!-- eslint-disable vue/no-deprecated-slot-attribute -->
         <figure slot="first" class="before">
           <img class="spriggles-img" :src="unskewedImageSrc">
           <figcaption>Original</figcaption>
@@ -46,6 +40,7 @@
           <img class="spriggles-img" :src="vegetationImageSrc">
           <figcaption>Extracted</figcaption>
         </figure>
+        <!-- eslint-enable -->
       </ImgComparisonSlider>
     </div>
     <div v-if="ratio !== undefined && unskewedImageSrc && vegetationImageSrc" class="mt-3 d-flex justify-space-between">
@@ -64,9 +59,11 @@
   import { distort, Canvas as LensCanvas, VirtualPixelMethod } from '@alxcube/lens'
   import downscale from 'downscale'
   import { type Dims, limitDimensions, minkowskiDistance } from '@/plugins/util'
+  import { coreStore } from '@/stores/app'
 
-  const emit = defineEmits(['delete', 'ratio-changed', 'title-changed'])
+  const emit = defineEmits(['ratio-changed', 'title-changed'])
 
+  const store = coreStore()
   const wrapper = useTemplateRef('wrapper')
   const polygonCanvas = useTemplateRef('polygonCanvas')
   const scaledImage = useTemplateRef('scaledImage')
@@ -84,6 +81,7 @@
   let maxRes = 1440
   let maxWidth = 1440
   let canvas: Canvas | undefined = undefined
+  const mousePosition: Dims = { x: 0, y: 0 }
   let imageDimensions: Dims = { x: 0, y: 0 }
   let canvasDimensions: Dims = { x: 0, y: 0 }
   const resizeObserver: ResizeObserver = new ResizeObserver(debounceResize)
@@ -116,6 +114,10 @@
       timeout = setTimeout(() => addPolygon(), 100)
     }
   }
+
+  watch(() => polygon.value?.points, newValue => {
+    store.setLatestImagePoints(newValue)
+  }, { deep: true })
 
   watch(sourceImageFile, async (newValue: File | undefined) => {
     if (newValue) {
@@ -161,6 +163,14 @@
         canvasDimensions = { x: width, y: height }
         canvas.setDimensions({ width, height })
         canvas.on('mouse:down', (e: any) => {
+          mousePosition.x = e.absolutePointer.x
+          mousePosition.y = e.absolutePointer.y
+        })
+        canvas.on('mouse:up', (e: any) => {
+          if (minkowskiDistance([mousePosition.x, mousePosition.y], [e.absolutePointer.x, e.absolutePointer.y]) > 1) {
+            return
+          }
+
           if (polygon.value && polygon.value.points) {
             let index = -1
             let minDistance = Number.MAX_VALUE
@@ -205,7 +215,9 @@
       }
 
       if (!polygon.value) {
-        polygon.value = new Polygon([{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }], {
+        const useStorePoints = store.latestImagePoints && store.latestImagePoints.length === 4 && store.latestImagePoints.every(p => p.x >= 0 && p.x <= canvasDimensions.x && p.y >= 0 && p.y <= canvasDimensions.y)
+
+        polygon.value = new Polygon(useStorePoints ? store.latestImagePoints : [{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }], {
           fill: 'white',
           opacity: 0.25,
           strokeWidth: 1,

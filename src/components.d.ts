@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    GridScoreExportModal: typeof import('./components/modals/GridScoreExportModal.vue')['default']
+    GridScoreInfoModal: typeof import('./components/modals/GridScoreInfoModal.vue')['default']
     ImageProcessor: typeof import('./components/ImageProcessor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
