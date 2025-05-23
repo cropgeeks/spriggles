@@ -15,8 +15,12 @@
           src="@/assets/spriggles-full.svg"
         />
 
-        <v-app-bar-title style="cursor: pointer" @click="router.push('/')">Spriggles</v-app-bar-title>
+        <v-app-bar-title class="d-none d-sm-inline text-no-wrap" style="cursor: pointer" @click="router.push('/')">Spriggles</v-app-bar-title>
         <v-spacer />
+        <v-btn icon @click="selectMultiFile">
+          <v-icon icon="mdi-image-multiple" />
+          <v-tooltip activator="parent" location="bottom">Load multiple images</v-tooltip>
+        </v-btn>
         <v-btn icon @click="addTab">
           <v-icon icon="mdi-plus" />
           <v-tooltip activator="parent" location="bottom">Add new image tab</v-tooltip>
@@ -47,6 +51,14 @@
 
         <template v-if="route.path === '/'" #extension />
       </v-app-bar>
+
+      <v-file-input
+        ref="multiFileInput"
+        v-model="imageFiles"
+        accept="image/*"
+        class="d-none"
+        multiple
+      />
 
       <v-container class="app-content">
         <router-view />
@@ -122,10 +134,28 @@
   // COMPOSITION
   const store = coreStore()
   const goTo = useGoTo()
-  const loading = ref<boolean>(false)
-  const loadingMessage = ref<string>()
   const route = useRoute()
   const router = useRouter()
+
+  // REFS
+  const multiFileInput = ref()
+  const imageFiles = ref<File[]>([])
+  const loading = ref<boolean>(false)
+  const loadingMessage = ref<string>()
+
+  // WATCH
+  watch(imageFiles, async newValue => {
+    if (newValue && newValue.length > 0) {
+      emitter.emit('add-images', newValue)
+
+      imageFiles.value = []
+    }
+  })
+
+  // METHODS
+  function selectMultiFile () {
+    multiFileInput.value.click()
+  }
 
   function setLoading (newLoading: boolean, newMessage: string) {
     loading.value = newLoading

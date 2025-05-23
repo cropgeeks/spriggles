@@ -244,6 +244,8 @@
       return
     }
 
+    // TODO: Check image indices against trial layout. Also check germplasm names to make sure everything is correct.
+
     const data: { [index: string]: TraitMeasurement[] } = {}
 
     props.images.forEach(i => {

@@ -6,13 +6,31 @@
       label="File input"
     />
 
-    <v-btn
-      v-if="polygon"
-      prepend-icon="mdi-overscan"
-      @click="maximizePolygon"
-    >
-      Maximize selection
-    </v-btn>
+    <div v-if="polygon">
+      <v-btn
+        class="me-3 mb-3"
+        :disabled="!props.neighborIds[0]"
+        prepend-icon="mdi-dock-left"
+        @click="fetchPolygon(props.neighborIds[0])"
+      >
+        Copy from image to left
+      </v-btn>
+      <v-btn
+        class="me-3 mb-3"
+        prepend-icon="mdi-overscan"
+        @click="maximizePolygon"
+      >
+        Maximize selection
+      </v-btn>
+      <v-btn
+        class="me-3 mb-3"
+        :disabled="!props.neighborIds[1]"
+        prepend-icon="mdi-dock-left"
+        @click="fetchPolygon(props.neighborIds[1])"
+      >
+        Copy from image to right
+      </v-btn>
+    </div>
     <div class="outer-canvas-container justify-center">
       <img ref="scaledImage" class="spriggles-img" :src="scaledImageSrc">
       <canvas ref="polygonCanvas" height="0" width="0" />
@@ -54,14 +72,28 @@
   // @ts-ignore
   import emitter from 'tiny-emitter/instance'
   import { ImgComparisonSlider } from '@img-comparison-slider/vue'
-  import { Canvas, controlsUtils, Polygon, type TPointerEvent, type Transform } from 'fabric'
+  import { Canvas, controlsUtils, Polygon, type TPointerEvent, type Transform, type XY } from 'fabric'
   import Image from 'image-js'
   import { distort, Canvas as LensCanvas, VirtualPixelMethod } from '@alxcube/lens'
   import downscale from 'downscale'
   import { type Dims, limitDimensions, minkowskiDistance } from '@/plugins/util'
   import { coreStore } from '@/stores/app'
 
-  const emit = defineEmits(['ratio-changed', 'title-changed'])
+  const emit = defineEmits(['file-loaded', 'ratio-changed', 'title-changed'])
+
+  export type PolygonCallbackFunction = (points: XY[]) => void
+
+  export interface Options {
+    fileToLoad?: File
+    imageId?: string
+    neighborIds?: (string | undefined)[]
+  }
+
+  const props = withDefaults(defineProps<Options>(), {
+    fileToLoad: undefined,
+    imageId: '',
+    neighborIds: () => [undefined, undefined],
+  })
 
   const store = coreStore()
   const wrapper = useTemplateRef('wrapper')
@@ -327,17 +359,44 @@
     }
   }
 
+  function fetchPolygon (id: string | undefined) {
+    if (id) {
+      emitter.emit('fetch-polygon', id, (points: XY[]) => {
+        if (polygon.value && points && points.length === 4 && points.every(p => p.x >= 0 && p.x <= canvasDimensions.x && p.y >= 0 && p.y <= canvasDimensions.y)) {
+          polygon.value.points = points
+          polygon.value.setCoords()
+          polygon.value.canvas?.renderAll()
+        }
+      })
+    }
+  }
+
+  function providePolygon (id: string, promise: PolygonCallbackFunction) {
+    if (id === props.imageId && polygon.value && polygon.value.points) {
+      promise(polygon.value.points)
+    }
+  }
+
   onMounted(() => {
     if (wrapper.value) {
       resizeObserver.observe(wrapper.value)
     }
     maxWidth = wrapper.value?.clientWidth || 1440
     maxRes = 1440
+
+    if (props.fileToLoad) {
+      sourceImageFile.value = props.fileToLoad
+      emit('file-loaded')
+    }
+
+    emitter.on('fetch-polygon', providePolygon)
   })
   onBeforeUnmount(() => {
     if (wrapper.value) {
       resizeObserver.unobserve(wrapper.value)
     }
+
+    emitter.off('fetch-polygon', providePolygon)
   })
 </script>
 

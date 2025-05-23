@@ -53,6 +53,10 @@
         </v-chip>
       </div>
       <ImageProcessor
+        :file-to-load="image.fileToLoad"
+        :image-id="image.id"
+        :neighbor-ids="[images[index - 1]?.id, images[index + 1]?.id]"
+        @file-loaded="imageFileLoaded(index)"
         @ratio-changed="newRatio => updateRatio(index, newRatio)"
         @title-changed="newTitle => updateTitle(index, newTitle)"
       />
@@ -109,6 +113,7 @@
     displayTitle: string
     gridscoreConfig?: GridScoreConfig
     ratio?: number | undefined
+    fileToLoad?: File
   }
 
   // COMPOSITION
@@ -150,6 +155,9 @@
   })
 
   // METHODS
+  function imageFileLoaded (index: number) {
+    images.value[index].fileToLoad = undefined
+  }
   function onSelectImage (image: Tab) {
     selectedImage.value = image
 
@@ -183,6 +191,18 @@
 
     tab.value = images.value.length - 1
   }
+  function addImages (files: File[]) {
+    files.forEach(f => {
+      images.value.push({
+        id: getId(),
+        title: 'Image',
+        displayTitle: 'Image',
+        fileToLoad: f,
+      })
+
+      tab.value = images.value.length - 1
+    })
+  }
   function deleteImage (index: number) {
     images.value.splice(index, 1)
     tab.value = Math.max(0, Math.min(images.value.length - 1, index - 1))
@@ -200,11 +220,13 @@
   // LIFECYCLE
   onMounted(() => {
     emitter.on('add-tab', addTab)
+    emitter.on('add-images', addImages)
     emitter.on('download', download)
     emitter.on('export-gridscore', exportToGridScore)
   })
   onBeforeUnmount(() => {
     emitter.off('add-tab', addTab)
+    emitter.off('add-images', addImages)
     emitter.off('download', download)
     emitter.off('export-gridscore', exportToGridScore)
   })
