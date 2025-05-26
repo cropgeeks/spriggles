@@ -25,9 +25,11 @@
       <v-btn
         class="me-3 mb-3"
         :disabled="!props.neighborIds[1]"
-        prepend-icon="mdi-dock-left"
         @click="fetchPolygon(props.neighborIds[1])"
       >
+        <template #prepend>
+          <v-icon class="rotate-180" icon="mdi-dock-left" />
+        </template>
         Copy from image to right
       </v-btn>
     </div>
