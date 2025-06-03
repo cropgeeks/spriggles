@@ -147,7 +147,7 @@
   import { formatTimeAgo, getGridScoreColumnIndex, getGridScoreRowIndex, toLocalDateString } from '@/plugins/util'
   import type { Trait, Trial } from '@/types/gridscore'
   import axios, { type AxiosResponse } from 'axios'
-  import type { TraitMeasurement } from '../../types/gridscore'
+  import type { TraitMeasurement } from '@/types/gridscore'
 
   export interface Options {
     images?: Tab[]
@@ -223,6 +223,12 @@
     gridscoreShareCode.value = undefined
     visible.value = true
   }
+  function hide () {
+    trial.value = undefined
+    selectedTrait.value = undefined
+    gridscoreShareCode.value = undefined
+    visible.value = false
+  }
   function loadTrial () {
     // @ts-ignore
     axios.default({
@@ -276,7 +282,7 @@
         'Content-Type': 'application/json; charset=utf-8',
       },
     }).then((t: AxiosResponse) => {
-      console.log(t)
+      hide()
     }).catch((err: any) => {
       // TODO
       console.error(err)

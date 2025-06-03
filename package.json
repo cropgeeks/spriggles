@@ -20,11 +20,12 @@
     "downscale": "^1.0.6",
     "fabric": "^6.6.4",
     "image-js": "^0.37.0",
+    "pinia-plugin-persistedstate": "^4.3.0",
     "short-unique-id": "^5.3.2",
     "tiny-emitter": "^2.1.0",
     "v-plausible": "^1.2.0",
     "vue": "^3.5.13",
-    "vuetify": "^3.8.1",
+    "vuetify": "^3.8.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {

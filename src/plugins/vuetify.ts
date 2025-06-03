@@ -7,12 +7,16 @@
 // Styles
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
+import { VColorInput } from 'vuetify/labs/VColorInput'
 
 // Composables
 import { createVuetify } from 'vuetify'
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
+  components: {
+    VColorInput,
+  },
   theme: {
     defaultTheme: 'dark',
     themes: {

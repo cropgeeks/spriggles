@@ -44,6 +44,10 @@
           <v-icon icon="mdi-file-excel-outline" />
           <v-tooltip activator="parent" location="bottom">Export data to Excel</v-tooltip>
         </v-btn>
+        <v-btn icon @click="showSettings">
+          <v-icon icon="mdi-cog" />
+          <v-tooltip activator="parent" location="bottom">View/change settings</v-tooltip>
+        </v-btn>
         <v-btn icon to="/about">
           <v-icon icon="mdi-information-outline" />
           <v-tooltip activator="parent" location="bottom">Show information about Spriggles</v-tooltip>
@@ -167,6 +171,9 @@
   }
   function downloadData () {
     emitter.emit('download')
+  }
+  function showSettings () {
+    emitter.emit('show-settings')
   }
   function exportToGridScore () {
     emitter.emit('export-gridscore')

@@ -79,7 +79,7 @@
   import { distort, Canvas as LensCanvas, VirtualPixelMethod } from '@alxcube/lens'
   import downscale from 'downscale'
   import { type Dims, limitDimensions, minkowskiDistance } from '@/plugins/util'
-  import { coreStore } from '@/stores/app'
+  import { coreStore, type PolygonOptions } from '@/stores/app'
 
   const emit = defineEmits(['file-loaded', 'ratio-changed', 'title-changed'])
 
@@ -148,6 +148,17 @@
       timeout = setTimeout(() => addPolygon(), 100)
     }
   }
+
+  watch(() => store.polygonOptions, (value: PolygonOptions) => {
+    if (polygon.value) {
+      polygon.value.fill = value.fill || '#ffffff'
+      polygon.value.stroke = value.stroke || '#ffffff'
+      polygon.value.opacity = value.opacity || 0.25
+      polygon.value.cornerColor = value.corners || '#6E1E41'
+      polygon.value.setCoords()
+      polygon.value.canvas?.renderAll()
+    }
+  }, { deep: true })
 
   watch(() => polygon.value?.points, newValue => {
     store.setLatestImagePoints(newValue)
@@ -252,14 +263,14 @@
         const useStorePoints = store.latestImagePoints && store.latestImagePoints.length === 4 && store.latestImagePoints.every(p => p.x >= 0 && p.x <= canvasDimensions.x && p.y >= 0 && p.y <= canvasDimensions.y)
 
         polygon.value = new Polygon(useStorePoints ? store.latestImagePoints : [{ x: 0, y: 0 }, { x: canvasDimensions.x, y: 0 }, { x: canvasDimensions.x, y: canvasDimensions.y }, { x: 0, y: canvasDimensions.y }], {
-          fill: 'white',
-          opacity: 0.25,
-          strokeWidth: 1,
-          stroke: 'white',
+          fill: store.polygonOptions.fill || '#ffffff',
+          opacity: store.polygonOptions.opacity || 0.25,
+          strokeWidth: 2,
+          stroke: store.polygonOptions.stroke || '#ffffff',
           objectCaching: false,
           transparentCorners: false,
           cornerSize: 20,
-          cornerColor: '#6E1E41',
+          cornerColor: store.polygonOptions.corners || '#6E1E41',
           hasBorders: false,
         })
         canvas.add(polygon.value)

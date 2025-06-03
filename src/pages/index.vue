@@ -81,6 +81,7 @@
     </v-list>
   </GridScoreInfoModal>
   <GridScoreExportModal v-if="gridscoreImages" ref="gridscoreExportModal" :images="gridscoreImages" />
+  <SettingsModal ref="settingsModal" />
 </template>
 
 <script lang="ts" setup>
@@ -94,6 +95,7 @@
   import { useTheme } from 'vuetify'
   import { coreStore } from '@/stores/app'
   import GridScoreExportModal from '@/components/modals/GridScoreExportModal.vue'
+  import SettingsModal from '@/components/modals/SettingsModal.vue'
 
   const vTheme = useTheme()
 
@@ -124,6 +126,7 @@
   const selectedImage = ref<Tab>()
   const gridscoreInfoModal = ref()
   const gridscoreExportModal = ref()
+  const settingsModal = ref()
   const images = ref<Tab[]>([
     { id: getId(), title: 'Image', displayTitle: 'Image' },
   ])
@@ -216,6 +219,9 @@
   function exportToGridScore () {
     gridscoreExportModal.value.show()
   }
+  function showSettings () {
+    settingsModal.value.show()
+  }
 
   // LIFECYCLE
   onMounted(() => {
@@ -223,12 +229,14 @@
     emitter.on('add-images', addImages)
     emitter.on('download', download)
     emitter.on('export-gridscore', exportToGridScore)
+    emitter.on('show-settings', showSettings)
   })
   onBeforeUnmount(() => {
     emitter.off('add-tab', addTab)
     emitter.off('add-images', addImages)
     emitter.off('download', download)
     emitter.off('export-gridscore', exportToGridScore)
+    emitter.off('show-settings', showSettings)
   })
 </script>
 
