@@ -64,6 +64,7 @@
 
       <v-btn
         v-if="images[index].ratio !== undefined"
+        class="mt-5"
         text="Send measurement to source"
         prepend-icon="mdi-clipboard-arrow-left"
         color="primary"
