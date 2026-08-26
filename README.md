@@ -1,81 +1,81 @@
-# Vuetify (Default)
+# Spriggles
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/cropgeeks/spriggles/main/src/assets/spriggles-full.svg?sanitize=true" width="200" alt="Logo">
+</p>
 
-## ❗️ Important Links
+![GitHub License](https://img.shields.io/github/license/cropgeeks/spriggles?style=for-the-badge&logo=apache)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/cropgeeks/spriggles?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/cropgeeks/spriggles?style=for-the-badge&logo=git)
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
+Spriggles is a web application for extracting vegetation indices from images. It's built as a Progressive Web App (PWA), so once loaded it can be used completely offline — handy for fieldwork where connectivity isn't guaranteed.
 
-## 💿 Install
+## Features
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
+- **Vegetation index extraction** — process images to calculate vegetation indices.
+- **Batch processing** — work through multiple images in one session rather than handling them one at a time.
+- **Perspective correction** — draw a four-cornered polygon on a source image to mark the region of interest, which is then transformed into a rectangle for further processing.
+- **GridScore integration** — send extracted data directly to [GridScore](https://gridscore.hutton.ac.uk/).
+- **Offline-first (PWA)** — installable and fully usable without an internet connection after the initial load.
 
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
+## Tech stack
 
-After completing the installation, your environment is ready for Vuetify development.
+Spriggles is built with:
 
-## ✨ Features
+- [Vue 3](https://vuejs.org/)
+- [Vuetify 3](https://vuetifyjs.com/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Pinia](https://pinia.vuejs.org/) for state management
+- [Vue Router](https://router.vuejs.org/)
 
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts-next for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts-next](https://github.com/loicduong/vite-plugin-vue-layouts-next)
-- 💻 **Enhanced Development Experience**: Benefit from TypeScript's static type checking and the ESLint plugin suite for Vue, ensuring code quality and consistency. [TypeScript](https://www.typescriptlang.org/) | [ESLint Plugin Vue](https://eslint.vuejs.org/)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
-- 🛠️ **Strongly-Typed Vue**: Use vue-tsc for type-checking your Vue components, and enjoy a robust development experience. [vue-tsc](https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc)
+## Getting started
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+### Prerequisites
 
-## 💡 Usage
+- [Node.js](https://nodejs.org/)
+- A package manager: npm, yarn, pnpm, or bun
 
-This section covers how to start the development server and build your project for production.
+### Installation
 
-### Starting the Development Server
-
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+Clone the repository and install dependencies:
 
 ```bash
-yarn dev
+git clone https://github.com/cropgeeks/spriggles.git
+cd spriggles
+npm install
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+### Development server
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
-
-### Building for Production
-
-To build your project for production, use:
+Start a local development server with hot-reload:
 
 ```bash
-yarn build
+npm run dev
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+The app will be available at `http://localhost:3000` (or the port shown in your terminal).
 
-Once the build process is completed, your application will be ready for deployment in a production environment.
+### Building for production
 
-## 💪 Support Vuetify Development
+```bash
+npm run build
+```
 
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
+The production-ready, installable PWA build will be output to the `dist` folder.
 
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
+## Usage
 
-## 📑 License
-[MIT](http://opensource.org/licenses/MIT)
+1. Upload one or more images.
+2. For each image, mark a four-cornered polygon around the area you want to analyse — Spriggles will warp this into a rectangle for consistent, distortion-free processing.
+3. Run the vegetation index extraction across your selected images.
+4. Review the results, and optionally send them to GridScore for further analysis.
+5. Since Spriggles is a PWA, you can install it to your device and continue using it without an internet connection.
 
-Copyright (c) 2016-present Vuetify, LLC
+## License
+
+This project is licensed under the [Apache-2.0 License](LICENSE).
+
+## About
+
+Spriggles is developed by [cropgeeks](https://github.com/cropgeeks).
