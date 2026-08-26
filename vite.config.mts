@@ -91,18 +91,19 @@ export default defineConfig({
         short_name: 'Spriggles',
         description: 'Spriggles is a mobile, fast and user-friendly tool for estimating the ratio of green foliage/vegetation against the background of an image.',
         theme_color: '#1e6e23',
+        start_url: './',
         launch_handler: {
           client_mode: 'focus-existing',
         },
         display: 'standalone',
         icons: [
           {
-            src: 'web-app-manifest-192x192.png',
+            src: './web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'web-app-manifest-512x512.png',
+            src: './web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
