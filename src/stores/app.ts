@@ -11,11 +11,15 @@ export interface PolygonOptions {
 
 export const coreStore = defineStore('app', {
   state: () => ({
+    isExternalRequest: false,
     hasGridScoreImage: false,
     latestImagePoints: undefined as (XY[] | undefined),
     polygonOptions: { fill: '#ffffff', opacity: 0.25, stroke: '#ffffff', corners: '#6E1E41' } as PolygonOptions,
   }),
   actions: {
+    setIsExternalRequest (newIsExternalRequest: boolean) {
+      this.isExternalRequest = newIsExternalRequest
+    },
     setHasGridScoreImage (newHasGridScoreImage: boolean) {
       this.hasGridScoreImage = newHasGridScoreImage
     },

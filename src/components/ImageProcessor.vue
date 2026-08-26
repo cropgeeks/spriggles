@@ -1,9 +1,11 @@
 <template>
-  <div ref="wrapper">
+  <div ref="wrapper" class="processor">
     <v-file-input
       v-model="sourceImageFile"
       accept="image/*"
-      label="File input"
+      capture="environment"
+      label="File input / capture image"
+      ref="fileInput"
     />
 
     <div v-if="polygon">
@@ -71,10 +73,11 @@
 </template>
 
 <script lang="ts" setup>
-  // @ts-ignore
+  // @ts-expect-error
   import emitter from 'tiny-emitter/instance'
   import { ImgComparisonSlider } from '@img-comparison-slider/vue'
-  import { Canvas, controlsUtils, Polygon, type TPointerEvent, type Transform, type XY } from 'fabric'
+  import { Canvas, controlsUtils, FabricObject, Polygon, type BasicTransformEvent, type TPointerEvent, type TPointerEventInfo, type Transform, type XY } from 'fabric'
+  // import { getPerspectiveWarp, readSync } from 'image-js'
   import Image from 'image-js'
   import { distort, Canvas as LensCanvas, VirtualPixelMethod } from '@alxcube/lens'
   import downscale from 'downscale'
@@ -101,6 +104,7 @@
   const wrapper = useTemplateRef('wrapper')
   const polygonCanvas = useTemplateRef('polygonCanvas')
   const scaledImage = useTemplateRef('scaledImage')
+  const fileInput = useTemplateRef('fileInput')
   const sourceImageFile = ref<File>()
   const scaledImageSrc = ref<string>()
   const unskewedImageSrc = ref<string>()
@@ -177,8 +181,8 @@
       vegetationImageSrc.value = undefined
       emit('title-changed', newValue.name)
       const reader = new FileReader()
-      reader.onload = (e: any) => {
-        scaledImageSrc.value = e.target.result
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        scaledImageSrc.value = e.target?.result as string
         emitter.emit('set-loading', false)
 
         nextTick(() => downScaleImage())
@@ -207,11 +211,11 @@
 
         canvasDimensions = { x: width, y: height }
         canvas.setDimensions({ width, height })
-        canvas.on('mouse:down', (e: any) => {
+        canvas.on('mouse:down', (e: TPointerEventInfo) => {
           mousePosition.x = e.absolutePointer.x
           mousePosition.y = e.absolutePointer.y
         })
-        canvas.on('mouse:up', (e: any) => {
+        canvas.on('mouse:up', (e: TPointerEventInfo) => {
           if (minkowskiDistance([mousePosition.x, mousePosition.y], [e.absolutePointer.x, e.absolutePointer.y]) > 1) {
             return
           }
@@ -237,10 +241,13 @@
             }
           }
         })
-        canvas.on('object:moving', (e: any) => {
-          const obj = e.target
+        canvas.on('object:moving', (e: BasicTransformEvent) => {
+          const obj = e.transform.target as FabricObject | undefined
+          if (!obj || !obj.canvas){
+            return
+          }
           // if object is too big ignore
-          if(obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width){
+          if (obj.getScaledHeight() > obj.canvas.height! || obj.getScaledWidth() > obj.canvas.width!) {
             return
           }
           obj.setCoords()
@@ -300,6 +307,15 @@
     })
 
     if (scaledImageSrc.value) {
+      emitter.emit('set-loading', true, 'Unskewing image')
+
+      // const image = readSync(scaledImageSrc.value)
+      // getPerspectiveWarp(points.map(p => { return { column: p.x, row: p.y }}))
+      // // const image = await Image.load(scaledImageSrc.value)
+      // const unskewed = image.warpingFourPoints(points.map(p => [p.x, p.y]))
+      // unskewedImageSrc.value = unskewed.toDataURL()
+      // emitter.emit('set-loading', false)
+
       // We're doing img-src => blob => canvas => perspective transformed canvas => blob => img-src
       fetch(scaledImageSrc.value)
         .then(res => res.blob())
@@ -357,14 +373,14 @@
 
       const image = await Image.load(unskewedImageSrc.value)
       const canopeo = image.grey({
-        algorithm: (r, g, b) => {
+        algorithm: (r: number, g: number, b: number) => {
           // return ((4 * g - 3 * b - r) > 175) ? 255 : 0
           // return (2 * g - r - b)/(2 * g + r + b) > 0.1 ? 255 : 0
           return ((r / g < p1) && (b / g < p2) && (2 * g - r - b) > p3) ? 255 : 0
         },
       })
       const mask = canopeo.open().close().mask()
-      ratio.value = canopeo.data.filter(c => c !== 0).length / canopeo.data.length
+      ratio.value = canopeo.data.filter((c: number) => c !== 0).length / canopeo.data.length
       emit('ratio-changed', ratio.value)
 
       vegetationImageSrc.value = image.extract(mask).toDataURL()
@@ -403,6 +419,11 @@
     }
 
     emitter.on('fetch-polygon', providePolygon)
+
+    nextTick(() => {
+      // Manually force this attribute onto the input field as Vuetify does not support setting it otherwise
+      document.querySelector('.processor input[type=file]')?.setAttribute('capture', 'environment')
+    })
   })
   onBeforeUnmount(() => {
     if (wrapper.value) {
