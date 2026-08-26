@@ -65,25 +65,12 @@ export default defineConfig({
       devOptions: {
         enabled: false,
       },
+      // Ensure scope matches relative base setup
+      scope: './',
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,vue,txt,woff2}'],
-        navigateFallbackDenylist: [/^\/api\/settings/, /^\/api\/trial/],
         maximumFileSizeToCacheInBytes: 30_000_000,
-        runtimeCaching: [{
-          handler: 'CacheFirst',
-          urlPattern: ({ url }) => url.pathname && url.pathname.includes('/api/trait/') && url.pathname.endsWith('/img'),
-          options: {
-            cacheName: 'trait-images',
-            expiration: {
-              maxEntries: 500,
-              maxAgeSeconds: 60 * 60 * 24 * 365,
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        }],
       },
       filename: 'service-worker.js',
       manifest: {
@@ -91,18 +78,19 @@ export default defineConfig({
         short_name: 'Spriggles',
         description: 'Spriggles is a mobile, fast and user-friendly tool for estimating the ratio of green foliage/vegetation against the background of an image.',
         theme_color: '#1e6e23',
+        scope: './',
         launch_handler: {
           client_mode: 'focus-existing',
         },
         display: 'standalone',
         icons: [
           {
-            src: './web-app-manifest-192x192.png',
+            src: '/web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: './web-app-manifest-512x512.png',
+            src: '/web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
