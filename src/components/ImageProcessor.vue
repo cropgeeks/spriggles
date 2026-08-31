@@ -92,6 +92,7 @@
     fileToLoad?: File
     imageId?: string
     neighborIds?: (string | undefined)[]
+    preferredExportFilename?: string
   }
 
   const props = withDefaults(defineProps<Options>(), {
@@ -130,7 +131,22 @@
     if (imageSrc) {
       const a = document.createElement('a')
       a.href = imageSrc
-      a.download = `${text}-${sourceImageFile.value?.name}`
+
+      let filename = `${text}-${sourceImageFile.value?.name}`
+
+      if (props.preferredExportFilename) {
+        const index = props.preferredExportFilename.lastIndexOf('.')
+        const [name, extension] = [props.preferredExportFilename.slice(0, index), props.preferredExportFilename.slice(index + 1, props.preferredExportFilename.length)]
+
+        if (extension && extension.trim().length > 0) {
+          // If there is a file extension, use it
+          filename = `${name}-${text}.${extension}`
+        } else {
+          filename = `${props.preferredExportFilename}-${text}`
+        }
+      }
+
+      a.download = filename
       a.click()
     }
   }

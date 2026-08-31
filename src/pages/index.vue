@@ -58,6 +58,7 @@
         :image-id="image.id"
         :neighbor-ids="[images[index - 1]?.id, images[index + 1]?.id]"
         @file-loaded="imageFileLoaded(index)"
+        :preferred-export-filename="externalImageRequestDetails?.filename"
         @ratio-changed="newRatio => updateRatio(index, newRatio)"
         @title-changed="newTitle => updateTitle(index, newTitle)"
       />
@@ -95,7 +96,7 @@
 </template>
 
 <script lang="ts" setup>
-  // @ts-ignore
+  // @ts-expect-error
   import emitter from 'tiny-emitter/instance'
   import * as XLSX from 'xlsx'
   import ImageProcessor from '@/components/ImageProcessor.vue'
@@ -127,6 +128,10 @@
     ratio?: number | undefined
     fileToLoad?: File
   }
+  interface ExternalRequestDetails {
+    url: string
+    filename?: string
+  }
 
   // COMPOSITION
   const store = coreStore()
@@ -138,7 +143,7 @@
   const gridscoreInfoModal = ref()
   const gridscoreExportModal = ref()
   const settingsModal = ref()
-  const externalImageRequestUrl = ref<string>()
+  const externalImageRequestDetails = ref<ExternalRequestDetails>()
   const images = ref<Tab[]>([
     { id: getId(), title: 'Image', displayTitle: 'Image' },
   ])
@@ -198,9 +203,8 @@
     images.value[index].ratio = ratio
   }
   function sendMeasurementToSource (index: number) {
-    console.log(externalImageRequestUrl.value)
-    if (index >= 0 && (index < images.value.length) && externalImageRequestUrl.value) {
-      const returnUrl = new URL(decodeURIComponent(externalImageRequestUrl.value))
+    if (index >= 0 && (index < images.value.length) && externalImageRequestDetails.value) {
+      const returnUrl = new URL(decodeURIComponent(externalImageRequestDetails.value.url))
       returnUrl.searchParams.append('externalRequestResult', `${images.value[index].ratio}`)
 
       // 4. Redirect back to the caller
@@ -254,7 +258,10 @@
     emitter.on('show-settings', showSettings)
 
     if (route.query && route.query.imageRequestCallback) {
-      externalImageRequestUrl.value = route.query.imageRequestCallback as string
+      externalImageRequestDetails.value = {
+        url: route.query.imageRequestCallback as string,
+        filename: route.query.imageRequestFilename as string | undefined,
+      }
       store.setIsExternalRequest(true)
     } else {
       store.setIsExternalRequest(false)
