@@ -173,7 +173,7 @@
 
   const numericTraitOptions: ComputedRef<Trait[]> = computed(() => {
     if (trial.value && trial.value.traits) {
-      return trial.value.traits.filter(t => t.dataType === 'int' || t.dataType === 'float' || t.dataType === 'range')
+      return trial.value.traits.filter(t => t.dataType === 'int' || t.dataType === 'float' || t.dataType === 'range' || t.dataType === 'vegindex')
         .sort((a, b) => a.name.localeCompare(b.name))
     } else {
       return []
