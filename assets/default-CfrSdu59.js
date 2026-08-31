@@ -1,1 +1,0 @@
-import{d as o,r as t,o as a,c as n,w as r,a as s,V as c}from"./index-LyVeMmay.js";const i=o({__name:"default",setup(_){return(p,u)=>{const e=t("router-view");return a(),n(c,null,{default:r(()=>[s(e)]),_:1})}}});export{i as default};
